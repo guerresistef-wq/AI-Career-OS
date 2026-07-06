@@ -1,0 +1,15 @@
+print("=" * 40)
+print("🤖 AI Career OS")
+print("=" * 40)
+
+name = input("What's your name? ")
+company = input("Company: ")
+role = input("Role: ")
+salary = input("Expected monthly salary (USD): ")
+
+print("\n========== PROFILE ==========")
+print(f"Name: {name}")
+print(f"Company: {company}")
+print(f"Role: {role}")
+print(f"Expected Salary: ${salary} USD/month")
+print("=============================")

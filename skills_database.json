@@ -1,0 +1,50 @@
+{
+    "account executive": [
+        "AI Fundamentals",
+        "Python Basics",
+        "Prompt Engineering",
+        "Solution Selling",
+        "CRM Automation",
+        "Enterprise Discovery"
+    ],
+    "senior account executive": [
+        "Enterprise Discovery",
+        "MEDDICC",
+        "AI Fundamentals",
+        "Python Basics",
+        "CRM Automation",
+        "Negotiation Strategy"
+    ],
+    "sales engineer": [
+        "Python",
+        "APIs",
+        "Cloud Fundamentals",
+        "SQL",
+        "SaaS Architecture",
+        "Technical Demos"
+    ],
+    "ai solutions consultant": [
+        "Python",
+        "LLMs",
+        "RAG",
+        "Prompt Engineering",
+        "Automation",
+        "Business Process Design"
+    ],
+    "customer success manager": [
+        "CRM Management",
+        "Customer Health Scores",
+        "Product Adoption Metrics",
+        "Data Analysis",
+        "Renewal Strategy",
+        "Automation"
+    ],
+    "solutions consultant": [
+        "Discovery",
+        "Technical Demos",
+        "APIs",
+        "SaaS Architecture",
+        "Business Process Mapping",
+        "Stakeholder Management"
+    ]
+}
