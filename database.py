@@ -50,10 +50,23 @@ def get_all_profiles():
     """)
 
     profiles = cursor.fetchall()
-
     connection.close()
 
     return profiles
+
+
+def update_profile(profile_id, name, role, experience, salary, career_score):
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        UPDATE profiles
+        SET name = ?, role = ?, experience = ?, salary = ?, career_score = ?
+        WHERE id = ?
+    """, (name, role, experience, salary, career_score, profile_id))
+
+    connection.commit()
+    connection.close()
 
 
 def delete_profile(profile_id):

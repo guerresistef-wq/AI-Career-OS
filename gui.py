@@ -1,7 +1,13 @@
 import customtkinter as ctk
 from tkinter import messagebox
 
-from database import create_tables, add_profile, get_all_profiles, delete_profile
+from database import (
+    create_tables,
+    add_profile,
+    get_all_profiles,
+    update_profile,
+    delete_profile,
+)
 
 
 ctk.set_appearance_mode("dark")
@@ -26,7 +32,6 @@ def calculate_score(experience, salary):
         score += 15
 
     score += 20
-
     return score
 
 
@@ -71,20 +76,12 @@ class AICareerOSApp(ctk.CTk):
     def show_dashboard(self):
         self.clear_content()
 
-        ctk.CTkLabel(
-            self.content,
-            text="Dashboard",
-            font=("Arial", 32, "bold")
-        ).pack(pady=20)
+        ctk.CTkLabel(self.content, text="Dashboard", font=("Arial", 32, "bold")).pack(pady=20)
 
         profiles = get_all_profiles()
 
         if len(profiles) == 0:
-            ctk.CTkLabel(
-                self.content,
-                text="No profiles available yet.",
-                font=("Arial", 18)
-            ).pack(pady=40)
+            ctk.CTkLabel(self.content, text="No profiles available yet.", font=("Arial", 18)).pack(pady=40)
             return
 
         total_profiles = len(profiles)
@@ -111,11 +108,7 @@ class AICareerOSApp(ctk.CTk):
     def show_create_profile(self):
         self.clear_content()
 
-        ctk.CTkLabel(
-            self.content,
-            text="Create Profile",
-            font=("Arial", 32, "bold")
-        ).pack(pady=20)
+        ctk.CTkLabel(self.content, text="Create Profile", font=("Arial", 32, "bold")).pack(pady=20)
 
         form = ctk.CTkFrame(self.content)
         form.pack(pady=20)
@@ -144,104 +137,168 @@ class AICareerOSApp(ctk.CTk):
                     return
 
                 career_score = calculate_score(experience, salary)
-
                 add_profile(name, role, experience, salary, career_score)
 
-                messagebox.showinfo(
-                    "Success",
-                    f"Profile saved successfully!\nCareer Score: {career_score} / 100"
-                )
-
+                messagebox.showinfo("Success", f"Profile saved successfully!\nCareer Score: {career_score} / 100")
                 self.show_dashboard()
 
             except ValueError:
                 messagebox.showerror("Error", "Experience and Salary must be numbers.")
 
-        ctk.CTkButton(
-            form,
-            text="Save Profile",
-            width=220,
-            height=40,
-            command=save_profile_from_form
-        ).pack(pady=20)
+        ctk.CTkButton(form, text="Save Profile", width=220, height=40, command=save_profile_from_form).pack(pady=20)
+
+    def show_edit_profile(self, profile):
+        self.clear_content()
+
+        profile_id = profile[0]
+        current_name = profile[1]
+        current_role = profile[2]
+        current_experience = profile[3]
+        current_salary = profile[4]
+
+        ctk.CTkLabel(self.content, text="Edit Profile", font=("Arial", 32, "bold")).pack(pady=20)
+
+        form = ctk.CTkFrame(self.content)
+        form.pack(pady=20)
+
+        name_entry = ctk.CTkEntry(form, width=320)
+        name_entry.insert(0, current_name)
+        name_entry.pack(pady=10)
+
+        role_entry = ctk.CTkEntry(form, width=320)
+        role_entry.insert(0, current_role)
+        role_entry.pack(pady=10)
+
+        experience_entry = ctk.CTkEntry(form, width=320)
+        experience_entry.insert(0, str(current_experience))
+        experience_entry.pack(pady=10)
+
+        salary_entry = ctk.CTkEntry(form, width=320)
+        salary_entry.insert(0, str(current_salary))
+        salary_entry.pack(pady=10)
+
+        def save_changes():
+            try:
+                name = name_entry.get().strip()
+                role = role_entry.get().strip()
+                experience = int(experience_entry.get())
+                salary = int(salary_entry.get())
+
+                if name == "" or role == "":
+                    messagebox.showerror("Error", "Name and Role are required.")
+                    return
+
+                career_score = calculate_score(experience, salary)
+
+                update_profile(
+                    profile_id,
+                    name,
+                    role,
+                    experience,
+                    salary,
+                    career_score
+                )
+
+                messagebox.showinfo("Success", "Profile updated successfully!")
+                self.show_profiles()
+
+            except ValueError:
+                messagebox.showerror("Error", "Experience and Salary must be numbers.")
+
+        ctk.CTkButton(form, text="Save Changes", width=220, height=40, command=save_changes).pack(pady=10)
+        ctk.CTkButton(form, text="Cancel", width=220, height=40, command=self.show_profiles).pack(pady=10)
 
     def show_profiles(self):
         self.clear_content()
 
-        ctk.CTkLabel(
-            self.content,
-            text="Saved Profiles",
-            font=("Arial", 32, "bold")
-        ).pack(pady=20)
+        ctk.CTkLabel(self.content, text="Saved Profiles", font=("Arial", 32, "bold")).pack(pady=20)
 
-        profiles = get_all_profiles()
+        search_entry = ctk.CTkEntry(self.content, width=500, placeholder_text="Search by name or role...")
+        search_entry.pack(pady=10)
 
-        if len(profiles) == 0:
-            ctk.CTkLabel(
-                self.content,
-                text="No profiles saved yet.",
-                font=("Arial", 18)
-            ).pack(pady=40)
-            return
-
-        scroll = ctk.CTkScrollableFrame(self.content, width=680, height=460)
+        scroll = ctk.CTkScrollableFrame(self.content, width=680, height=410)
         scroll.pack(pady=10)
 
-        for profile in profiles:
-            profile_id = profile[0]
-            name = profile[1]
-            role = profile[2]
-            experience = profile[3]
-            salary = profile[4]
-            score = profile[5]
+        def render_profiles(search_text=""):
+            for widget in scroll.winfo_children():
+                widget.destroy()
 
-            card = ctk.CTkFrame(scroll)
-            card.pack(fill="x", padx=10, pady=10)
+            profiles = get_all_profiles()
 
-            ctk.CTkLabel(card, text=f"👤 {name}", font=("Arial", 22, "bold")).pack(anchor="w", padx=15, pady=(12, 5))
-            ctk.CTkLabel(card, text=f"💼 Role: {role}", font=("Arial", 15)).pack(anchor="w", padx=15)
-            ctk.CTkLabel(card, text=f"🕒 Experience: {experience} years", font=("Arial", 15)).pack(anchor="w", padx=15)
-            ctk.CTkLabel(card, text=f"💰 Salary: {salary} USD", font=("Arial", 15)).pack(anchor="w", padx=15)
-            ctk.CTkLabel(card, text=f"⭐ Career Score: {score} / 100", font=("Arial", 15, "bold")).pack(anchor="w", padx=15, pady=(5, 5))
+            if search_text != "":
+                profiles = [
+                    profile for profile in profiles
+                    if search_text.lower() in profile[1].lower()
+                    or search_text.lower() in profile[2].lower()
+                ]
 
-            progress = ctk.CTkProgressBar(card, width=450)
-            progress.pack(anchor="w", padx=15, pady=(0, 10))
-            progress.set(score / 100)
+            if len(profiles) == 0:
+                ctk.CTkLabel(scroll, text="No matching profiles found.", font=("Arial", 18)).pack(pady=40)
+                return
 
-            def delete_selected_profile(selected_id=profile_id):
-                confirm = messagebox.askyesno(
-                    "Delete Profile",
-                    "Are you sure you want to delete this profile?"
-                )
+            for profile in profiles:
+                profile_id = profile[0]
+                name = profile[1]
+                role = profile[2]
+                experience = profile[3]
+                salary = profile[4]
+                score = profile[5]
 
-                if confirm:
-                    delete_profile(selected_id)
-                    self.show_profiles()
+                card = ctk.CTkFrame(scroll)
+                card.pack(fill="x", padx=10, pady=10)
 
-            ctk.CTkButton(
-                card,
-                text="Delete",
-                width=120,
-                command=delete_selected_profile
-            ).pack(anchor="e", padx=15, pady=(0, 12))
+                ctk.CTkLabel(card, text=f"👤 {name}", font=("Arial", 22, "bold")).pack(anchor="w", padx=15, pady=(12, 5))
+                ctk.CTkLabel(card, text=f"💼 Role: {role}", font=("Arial", 15)).pack(anchor="w", padx=15)
+                ctk.CTkLabel(card, text=f"🕒 Experience: {experience} years", font=("Arial", 15)).pack(anchor="w", padx=15)
+                ctk.CTkLabel(card, text=f"💰 Salary: {salary} USD", font=("Arial", 15)).pack(anchor="w", padx=15)
+                ctk.CTkLabel(card, text=f"⭐ Career Score: {score} / 100", font=("Arial", 15, "bold")).pack(anchor="w", padx=15, pady=(5, 5))
+
+                progress = ctk.CTkProgressBar(card, width=450)
+                progress.pack(anchor="w", padx=15, pady=(0, 10))
+                progress.set(score / 100)
+
+                button_row = ctk.CTkFrame(card, fg_color="transparent")
+                button_row.pack(anchor="e", padx=15, pady=(0, 12))
+
+                ctk.CTkButton(
+                    button_row,
+                    text="Edit",
+                    width=100,
+                    command=lambda selected_profile=profile: self.show_edit_profile(selected_profile)
+                ).pack(side="left", padx=5)
+
+                def delete_selected_profile(selected_id=profile_id):
+                    confirm = messagebox.askyesno(
+                        "Delete Profile",
+                        "Are you sure you want to delete this profile?"
+                    )
+
+                    if confirm:
+                        delete_profile(selected_id)
+                        render_profiles(search_entry.get().strip())
+
+                ctk.CTkButton(
+                    button_row,
+                    text="Delete",
+                    width=100,
+                    command=delete_selected_profile
+                ).pack(side="left", padx=5)
+
+        def on_search(event):
+            render_profiles(search_entry.get().strip())
+
+        search_entry.bind("<KeyRelease>", on_search)
+        render_profiles()
 
     def show_scores(self):
         self.clear_content()
 
-        ctk.CTkLabel(
-            self.content,
-            text="Career Scores",
-            font=("Arial", 32, "bold")
-        ).pack(pady=20)
+        ctk.CTkLabel(self.content, text="Career Scores", font=("Arial", 32, "bold")).pack(pady=20)
 
         profiles = get_all_profiles()
 
         if len(profiles) == 0:
-            ctk.CTkLabel(
-                self.content,
-                text="No profiles available.",
-                font=("Arial", 18)
-            ).pack(pady=40)
+            ctk.CTkLabel(self.content, text="No profiles available.", font=("Arial", 18)).pack(pady=40)
             return
 
         for profile in profiles:
