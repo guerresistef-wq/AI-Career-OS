@@ -5,6 +5,9 @@ services:
     container_name: ai-career-os
     stdin_open: true
     tty: true
+    ports:
+      - "8000:8000"
+    command: uvicorn app.api:app --host 0.0.0.0 --port 8000
     depends_on:
       - postgres
       - redis
