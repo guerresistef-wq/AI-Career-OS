@@ -1,6 +1,6 @@
 from storage import load_profiles, save_profiles
 from utils import title
-from score import calculate_score
+from app.services.score_service import calculate_score
 
 
 def create_profile(profile):

@@ -1,6 +1,6 @@
 from utils import title, pause
 from profile_manager import create_profile, view_profiles, edit_profile
-from score import calculate_score, show_scores
+from app.services.score_service import calculate_score, show_scores
 from skills import skills_gap_analyzer
 
 
