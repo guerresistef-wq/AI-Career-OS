@@ -29,4 +29,5 @@ def skills_gap_analyzer():
         for skill in skills:
             print(f"- {skill}")
     else:
+        
         print("Role not found in database.")

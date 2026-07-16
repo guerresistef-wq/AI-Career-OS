@@ -1,13 +1,15 @@
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 
-from database import (
+from app.database import (
     create_tables,
     add_profile,
     get_all_profiles,
     update_profile,
     delete_profile,
 )
+
+from app.services.resume_service import analyze_resume
 
 
 ctk.set_appearance_mode("dark")
@@ -71,6 +73,7 @@ class AICareerOSApp(ctk.CTk):
         ctk.CTkButton(self.sidebar, text="Create Profile", width=180, command=self.show_create_profile).pack(pady=8)
         ctk.CTkButton(self.sidebar, text="View Profiles", width=180, command=self.show_profiles).pack(pady=8)
         ctk.CTkButton(self.sidebar, text="Career Score", width=180, command=self.show_scores).pack(pady=8)
+        ctk.CTkButton(self.sidebar, text="Resume Analyzer", width=180, command=self.show_resume_analyzer).pack(pady=8)
         ctk.CTkButton(self.sidebar, text="Exit", width=180, command=self.destroy).pack(pady=(40, 8))
 
     def show_dashboard(self):
@@ -190,14 +193,7 @@ class AICareerOSApp(ctk.CTk):
 
                 career_score = calculate_score(experience, salary)
 
-                update_profile(
-                    profile_id,
-                    name,
-                    role,
-                    experience,
-                    salary,
-                    career_score
-                )
+                update_profile(profile_id, name, role, experience, salary, career_score)
 
                 messagebox.showinfo("Success", "Profile updated successfully!")
                 self.show_profiles()
@@ -323,6 +319,111 @@ class AICareerOSApp(ctk.CTk):
                 level = "Needs improvement"
 
             ctk.CTkLabel(card, text=f"Level: {level}", font=("Arial", 15)).pack(anchor="w", padx=20, pady=(0, 15))
+
+    def show_resume_analyzer(self):
+        self.clear_content()
+
+        ctk.CTkLabel(
+            self.content,
+            text="Resume Analyzer",
+            font=("Arial", 32, "bold")
+        ).pack(pady=20)
+
+        result_frame = ctk.CTkScrollableFrame(self.content, width=700, height=460)
+        result_frame.pack(pady=10)
+
+        def clear_results():
+            for widget in result_frame.winfo_children():
+                widget.destroy()
+
+        def upload_resume():
+            file_path = filedialog.askopenfilename(
+                title="Select Resume PDF",
+                filetypes=[
+                    ("PDF files", "*.pdf"),
+                    ("All files", "*.*")
+                ]
+            )
+
+            if not file_path:
+                return
+
+            clear_results()
+
+            result = analyze_resume(file_path)
+
+            if not result["success"]:
+                ctk.CTkLabel(
+                    result_frame,
+                    text=result["message"],
+                    font=("Arial", 18)
+                ).pack(pady=20)
+                return
+
+            score = result["score"]
+            keywords = result["keywords"]
+            preview = result["preview"]
+
+            ctk.CTkLabel(
+                result_frame,
+                text="Resume Score",
+                font=("Arial", 24, "bold")
+            ).pack(pady=(20, 5))
+
+            ctk.CTkLabel(
+                result_frame,
+                text=f"{score} / 100",
+                font=("Arial", 36, "bold")
+            ).pack(pady=5)
+
+            progress = ctk.CTkProgressBar(result_frame, width=500)
+            progress.pack(pady=10)
+            progress.set(score / 100)
+
+            ctk.CTkLabel(
+                result_frame,
+                text=result["message"],
+                font=("Arial", 18)
+            ).pack(pady=10)
+
+            ctk.CTkLabel(
+                result_frame,
+                text="Keywords Found",
+                font=("Arial", 22, "bold")
+            ).pack(pady=(25, 10))
+
+            if keywords:
+                for keyword in keywords:
+                    ctk.CTkLabel(
+                        result_frame,
+                        text=f"✓ {keyword}",
+                        font=("Arial", 15)
+                    ).pack(anchor="w", padx=80)
+            else:
+                ctk.CTkLabel(
+                    result_frame,
+                    text="No known keywords found.",
+                    font=("Arial", 15)
+                ).pack(pady=10)
+
+            ctk.CTkLabel(
+                result_frame,
+                text="Resume Preview",
+                font=("Arial", 22, "bold")
+            ).pack(pady=(25, 10))
+
+            preview_box = ctk.CTkTextbox(result_frame, width=620, height=220)
+            preview_box.pack(pady=10)
+            preview_box.insert("1.0", preview)
+            preview_box.configure(state="disabled")
+
+        ctk.CTkButton(
+            self.content,
+            text="Upload Resume PDF",
+            width=260,
+            height=45,
+            command=upload_resume
+        ).pack(pady=10)
 
 
 if __name__ == "__main__":
