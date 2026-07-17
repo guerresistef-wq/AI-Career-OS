@@ -1,12 +1,13 @@
+import os
 import psycopg2
 
 
 def get_connection():
     return psycopg2.connect(
-        host="postgres",
-        dbname="ai_career_os",
-        user="stefano",
-        password="password123"
+        host=os.getenv("POSTGRES_HOST"),
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD")
     )
 
 
