@@ -46,3 +46,53 @@ def create_user(user: User):
     conn.close()
 
     return {"message": "User created successfully"}
+@app.put("/users/{user_id}")
+def update_user(user_id: int, user: User):
+    from app.services.postgres_service import get_connection
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE users SET name = %s, role = %s WHERE id = %s RETURNING id",
+        (user.name, user.role, user_id)
+    )
+
+    updated = cur.fetchone()
+
+    if updated is None:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return {"message": "User not found"}
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {"message": "User updated successfully"}
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int):
+    from app.services.postgres_service import get_connection
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM users WHERE id = %s RETURNING id",
+        (user_id,)
+    )
+
+    deleted = cur.fetchone()
+
+    if deleted is None:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return {"message": "User not found"}
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {"message": "User deleted successfully"}
