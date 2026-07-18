@@ -1,7 +1,16 @@
 from fastapi import FastAPI
-from app.services.postgres_service import get_users
+from pydantic import BaseModel
+
+from app.database_sqlalchemy import SessionLocal
+from app.models.user import User
+from app.services.sqlalchemy_service import get_all_users
 
 app = FastAPI()
+
+
+class UserRequest(BaseModel):
+    name: str
+    role: str
 
 
 @app.get("/")
@@ -11,88 +20,63 @@ def home():
 
 @app.get("/users")
 def users():
-    users = get_users()
-
-    return [
-        {
-            "id": user[0],
-            "name": user[1],
-            "role": user[2]
-        }
-        for user in users
-    ]
-from pydantic import BaseModel
-
-class User(BaseModel):
-    name: str
-    role: str
+    return get_all_users()
 
 
 @app.post("/users")
-def create_user(user: User):
-    from app.services.postgres_service import get_connection
+def create_user(user: UserRequest):
+    db = SessionLocal()
 
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        new_user = User(
+            name=user.name,
+            role=user.role
+        )
 
-    cur.execute(
-        "INSERT INTO users (name, role) VALUES (%s, %s)",
-        (user.name, user.role)
-    )
+        db.add(new_user)
+        db.commit()
 
-    conn.commit()
+        return {"message": "User created successfully"}
 
-    cur.close()
-    conn.close()
+    finally:
+        db.close()
 
-    return {"message": "User created successfully"}
+
 @app.put("/users/{user_id}")
-def update_user(user_id: int, user: User):
-    from app.services.postgres_service import get_connection
+def update_user(user_id: int, user: UserRequest):
+    db = SessionLocal()
 
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        existing_user = db.query(User).filter(User.id == user_id).first()
 
-    cur.execute(
-        "UPDATE users SET name = %s, role = %s WHERE id = %s RETURNING id",
-        (user.name, user.role, user_id)
-    )
+        if existing_user is None:
+            return {"message": "User not found"}
 
-    updated = cur.fetchone()
+        existing_user.name = user.name
+        existing_user.role = user.role
 
-    if updated is None:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        return {"message": "User not found"}
+        db.commit()
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        return {"message": "User updated successfully"}
 
-    return {"message": "User updated successfully"}
+    finally:
+        db.close()
+
+
 @app.delete("/users/{user_id}")
 def delete_user(user_id: int):
-    from app.services.postgres_service import get_connection
+    db = SessionLocal()
 
-    conn = get_connection()
-    cur = conn.cursor()
+    try:
+        existing_user = db.query(User).filter(User.id == user_id).first()
 
-    cur.execute(
-        "DELETE FROM users WHERE id = %s RETURNING id",
-        (user_id,)
-    )
+        if existing_user is None:
+            return {"message": "User not found"}
 
-    deleted = cur.fetchone()
+        db.delete(existing_user)
+        db.commit()
 
-    if deleted is None:
-        conn.rollback()
-        cur.close()
-        conn.close()
-        return {"message": "User not found"}
+        return {"message": "User deleted successfully"}
 
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return {"message": "User deleted successfully"}
+    finally:
+        db.close()
