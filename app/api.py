@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from app.database_sqlalchemy import SessionLocal
 from app.models.user import User
+from app.security import hash_password
 from app.services.sqlalchemy_service import get_all_users
 
 app = FastAPI()
@@ -11,6 +12,8 @@ app = FastAPI()
 class UserRequest(BaseModel):
     name: str
     role: str
+    email: str
+    password: str
 
 
 @app.get("/")
@@ -28,9 +31,16 @@ def create_user(user: UserRequest):
     db = SessionLocal()
 
     try:
+        existing_user = db.query(User).filter(User.email == user.email).first()
+
+        if existing_user is not None:
+            return {"message": "Email already registered"}
+
         new_user = User(
             name=user.name,
-            role=user.role
+            role=user.role,
+            email=user.email,
+            password=hash_password(user.password)
         )
 
         db.add(new_user)
@@ -54,6 +64,8 @@ def update_user(user_id: int, user: UserRequest):
 
         existing_user.name = user.name
         existing_user.role = user.role
+        existing_user.email = user.email
+        existing_user.password = hash_password(user.password)
 
         db.commit()
 
